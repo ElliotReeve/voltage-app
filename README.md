@@ -37,4 +37,12 @@ scp file.txt remote_username@10.10.0.2:/remote/directory
 # Load docker image
 docker load -i <path to image tar file>
 # Run docker container
+docker run \
+-itd \
+--name voltage_app \
+--restart=always \
+-e 'DATABASE_URL=mysql+mysqldb://root@127.0.0.1/voltage' \
+-p 4000:4000 \
+--network=host \
+voltage_app:latest
 ```
