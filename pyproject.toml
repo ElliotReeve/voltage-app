@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "voltage-app"
+version = "0.1.0"
+description = ""
+authors = ["Elliot Reeve <hello@elliotreeve.co.uk>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = {extras = ["all"], version = "^0.78.0"}
+uvicorn = {version = "0.17.6", extras = ["standard"]}
+SQLAlchemy = "^1.4.39"
+mysqlclient = "^2.1.1"
+fastapi-pagination = "^0.9.3"
+httpx = "^0.23.0"
+typing = "3.7.4.3"
+starlette = "0.19.1"
+toml = "^0.10.2"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

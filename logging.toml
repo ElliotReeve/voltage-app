@@ -1,0 +1,24 @@
+# https://docs.python.org/3/library/logging.config.html#logging-config-dictschema
+version = 1
+
+[handlers.stderr]
+class = "logging.StreamHandler"
+stream = "ext://sys.stderr"
+
+[handlers.application]
+class = "app.logging.JSONFileHandler"
+filename = "logs/application.jsonl"
+
+[handlers.server_access]
+class = "app.logging.JSONFileHandler"
+filename = "logs/server_access.jsonl"
+
+[handlers.unhandled_errors]
+class = "app.logging.JSONFileHandler"
+filename = "logs/unhandled_errors.jsonl"
+
+
+[loggers]
+"app" = { handlers = ["application", "stderr"], level = "DEBUG", propagate = false }
+"app.logging.server_access_logger" = { handlers = ["server_access", "stderr"], level = "INFO", propagate = false }
+# "app.exception_handlers.unhandled_logger" = { handlers = ["unhandled_errors", "stderr"], level = "INFO", propagate = false }
