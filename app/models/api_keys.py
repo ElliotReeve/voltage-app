@@ -12,4 +12,5 @@ class APIKeyModel(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     api_key = Column(String(255))
+    linked = Column(Integer, default=0, nullable=False)
     status = Column(Integer, default=1, nullable=False)

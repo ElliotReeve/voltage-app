@@ -8,6 +8,7 @@ from .database import get_db
 from sqlalchemy.orm import Session
 from .models import APIKeyModel, VoltagesModel
 from .dtos.voltages import VoltagesDTO, VoltagesCreateDTO
+from .dtos.apikeys import APIKeysDTO, APIKeysCreateDTO
 from .dtos.generic import SuccessResponse
 from .pagination import Page, PageParams, paginate_sqlalchemy
 from .config import settings
@@ -44,6 +45,26 @@ def create_voltage(db: Session, voltage: VoltagesCreateDTO) -> VoltagesModel:
     db.refresh(db_voltages)
     return db_voltages
 
+def check_new_api_key(db, api_key):
+    if api_key is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Please provide a valid API key"
+            ),
+        )
+
+    api_key_query = db.query(APIKeyModel).filter(APIKeyModel.api_key==api_key).filter(APIKeyModel.status==1).filter(APIKeyModel.linked==0).first()
+    if not api_key_query:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "This API key is already linked to another account"
+            ),
+        )
+    return api_key_query
+
+
 def check_api_key(db, api_key):
     if api_key is None:
         raise HTTPException(
@@ -53,7 +74,7 @@ def check_api_key(db, api_key):
             ),
         )
 
-    api_key_query = db.query(APIKeyModel).filter(APIKeyModel.api_key==api_key).filter(APIKeyModel.status==1).first()
+    api_key_query = db.query(APIKeyModel).filter(APIKeyModel.api_key==api_key).filter(APIKeyModel.status==1).filter(APIKeyModel.linked==1).first()
     if not api_key_query:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -80,6 +101,7 @@ async def get_voltage(request: Request, db: Session = Depends(get_db), page_para
 
 @app.post("/voltage")
 async def post_voltage(request: Request, json: VoltagesCreateDTO, db: Session = Depends(get_db)):
+    # TODO: Check json is json
     api_key = request.headers.get('api-key')
     api_key_query = check_api_key(db, api_key)
 
@@ -89,3 +111,16 @@ async def post_voltage(request: Request, json: VoltagesCreateDTO, db: Session = 
     ))
 
     return SuccessResponse(data=VoltagesDTO.from_orm(voltage))
+
+
+@app.post("/api-key")
+async def post_api_key(json: APIKeysCreateDTO, db: Session = Depends(get_db)):
+    # TODO: Check json is json
+
+    api_key_query = check_new_api_key(db, json.api_key)
+
+    if api_key_query:
+        api_key_query.linked = 1
+        db.commit()
+
+    return SuccessResponse(data=APIKeysDTO.from_orm(api_key_query))
