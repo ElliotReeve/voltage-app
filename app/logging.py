@@ -9,8 +9,6 @@ import toml
 from dotenv import load_dotenv
 from fastapi import Request
 
-from .config import settings
-
 load_dotenv()
 
 

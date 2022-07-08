@@ -1,6 +1,4 @@
 from fastapi import FastAPI, Request, HTTPException, status, Depends
-from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.exceptions import HTTPException
@@ -38,12 +36,14 @@ app.add_exception_handler(
     handle_unhandled_exceptions,
 )
 
+
 def create_voltage(db: Session, voltage: VoltagesCreateDTO) -> VoltagesModel:
     db_voltages = VoltagesModel(**voltage.dict())
     db.add(db_voltages)
     db.commit()
     db.refresh(db_voltages)
     return db_voltages
+
 
 def check_new_api_key(db, api_key):
     if api_key is None:
@@ -54,8 +54,15 @@ def check_new_api_key(db, api_key):
             ),
         )
 
-    api_key_query = db.query(APIKeyModel).filter(APIKeyModel.api_key==api_key).filter(APIKeyModel.status==1).filter(APIKeyModel.linked==0).first()
-    if not api_key_query:
+    api_key_query = db.query(APIKeyModel).filter(APIKeyModel.api_key==api_key).first()
+    if not api_key_query or api_key_query.status == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Please provide a valid API key"
+            ),
+        )
+    if api_key_query.linked == 1:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
@@ -84,7 +91,8 @@ def check_api_key(db, api_key):
         )
     return api_key_query
 
-@app.get("/voltage")
+
+@app.get("/voltage", response_model=Page, response_model_exclude_none=True)
 async def get_voltage(request: Request, db: Session = Depends(get_db), page_params: PageParams = Depends()):
     api_key = request.headers.get('api-key')
     api_key_query = check_api_key(db, api_key)
@@ -99,14 +107,15 @@ async def get_voltage(request: Request, db: Session = Depends(get_db), page_para
 
     return Page[VoltagesDTO](meta=page.meta, data=data)
 
-@app.post("/voltage")
+
+@app.post("/voltage", response_model=SuccessResponse, response_model_exclude_none=True)
 async def post_voltage(request: Request, json: VoltagesCreateDTO, db: Session = Depends(get_db)):
-    # TODO: Check json is json
     api_key = request.headers.get('api-key')
     api_key_query = check_api_key(db, api_key)
 
     voltage = create_voltage(db, VoltagesCreateDTO(
-        voltage=json.voltage,
+        main_battery=json.main_battery,
+        auxiliary_battery=json.auxiliary_battery,
         api_key=api_key_query.id,
     ))
 
@@ -115,8 +124,6 @@ async def post_voltage(request: Request, json: VoltagesCreateDTO, db: Session = 
 
 @app.post("/api-key")
 async def post_api_key(json: APIKeysCreateDTO, db: Session = Depends(get_db)):
-    # TODO: Check json is json
-
     api_key_query = check_new_api_key(db, json.api_key)
 
     if api_key_query:

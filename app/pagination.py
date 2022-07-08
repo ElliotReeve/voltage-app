@@ -3,13 +3,10 @@
 import typing
 
 from fastapi import Query
-from fastapi_pagination import create_page as _create_page
 from fastapi_pagination import paginate as _paginate
 from fastapi_pagination import set_page as _set_page
 from fastapi_pagination.bases import AbstractPage, AbstractParams, RawParams
 from fastapi_pagination.ext.sqlalchemy import paginate as _paginate_sqlalchemy
-from httpx import Client
-from httpx._types import PrimitiveData
 from pydantic import BaseModel
 from sqlalchemy.orm import Query as SQLAlchemyQuery
 
